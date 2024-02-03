@@ -3,19 +3,28 @@ import numpy as np
 from face_alignment import FaceAlignment, LandmarksType
 
 from MatchFaces import get_alignment
+from MatchBackgrounds import match_backgrounds
 
 
 def style_transfer():
     input_image = 'C:/Users/amand/Desktop/repos/StyleTransfer/src/style2.jpg'
     example_image = 'C:/Users/amand/Desktop/repos/StyleTransfer/src/style4.jpg'
+    input_mask = 'C:/Users/amand/Desktop/repos/StyleTransfer/src/mask_style2.jpg'
+    example_mask = 'C:/Users/amand/Desktop/repos/StyleTransfer/src/mask_style4.jpg'
     bGrayEx = True
+    bUseMask = input_mask is not None and example_mask is not None
 
     input = np.float32(cv.imread(input_image))
     example = np.float32(cv.imread(example_image))
+    iMask = np.uint8(cv.imread(input_mask))
+    eMask = np.uint8(cv.imread(example_mask))
+
 
     if bGrayEx:
         input = cv.cvtColor(input, cv.COLOR_RGB2GRAY)
         example = cv.cvtColor(example, cv.COLOR_RGB2GRAY)
+        iMask = cv.cvtColor(iMask, cv.COLOR_BGR2GRAY)
+        eMask = cv.cvtColor(eMask, cv.COLOR_BGR2GRAY)
 
     example = cv.resize(example, (input.shape[1], input.shape[0]))
 
@@ -24,12 +33,28 @@ def style_transfer():
     exampleLm = alignment.get_landmarks_from_image(example)[0]
 
     vx, vy = get_alignment(example, exampleLm, inputLm)
-    output = get_matching_energy(input, example, vx, vy)
+    output = get_matching_energy(input, example, vx, vy, iMask, eMask)
+    cv.imwrite('output0' + '.jpg', output)
+
+    if bUseMask:
+        output[iMask == 0] = 0
+        cv.imwrite('output1' + '.jpg', output)
+
+        if not bGrayEx:
+            newMask = eMask[:, :, 0] & eMask[:, :, 1] & eMask[:, :, 2]
+        else:
+            newMask = eMask
+
+        cv.imwrite('output2' + '.jpg', newMask)
+        dst = cv.inpaint(np.uint8(example), newMask, 6, cv.INPAINT_TELEA)
+        cv.imwrite('output3' + '.jpg', dst)
+
+        output[iMask == 0] = dst[iMask == 0]
 
     cv.imwrite('output' + '.jpg', output)
 
 
-def get_matching_energy(input, style, vx, vy):
+def get_matching_energy(input, style, vx, vy, iMask, eMask):
     h = input.shape[0]
     w = input.shape[1]
     # Image might have less than three channels
@@ -39,8 +64,9 @@ def get_matching_energy(input, style, vx, vy):
         c = 1
     new_h, new_w, = h, w,
     new_style, new_input = np.copy(style), np.copy(input)
-    # new_style[style_mask == 0] = 0
-    # new_input[input_mask == 0] = 0
+    if iMask is not None and eMask is not None:
+        new_style[eMask == 0] = 0
+        new_input[iMask == 0] = 0
     n_stacks = 7
 
     # Build a Laplacian Stack
