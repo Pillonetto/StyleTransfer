@@ -1,4 +1,4 @@
-# Feature-Based Image Metamorphosis
+    # Feature-Based Image Metamorphosis
 # Thaddeus Baier
 
 import numpy as np
@@ -18,18 +18,18 @@ def get_alignment(example, inputLm, exampleLm):
     weightsum = np.zeros(xx.shape)
     #For each line PiQi
     for i in range(len(inputLm) - 1):
-        if i in {16, 21, 26, 30, 35, 47}:
-            continue
-        elif i is 41:
-            j = 36
-        elif i is 47:
-            j = 42
-        elif i is 59:
-            j = 48
-        elif i is 67:
-            j = 60
-        else:
-            j = i + 1
+        # if i in {16, 21, 26, 30, 35, 47}:
+        #     continue
+        # elif i is 41:
+        #     j = 36
+        # elif i is 47:
+        #     j = 42
+        # elif i is 59:
+        #     j = 48
+        # elif i is 67:
+        #     j = 60
+        # else:
+        j = i + 1
 
         #Section 3.3 of Baier's Paper
 
